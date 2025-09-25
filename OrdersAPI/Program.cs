@@ -11,9 +11,9 @@ builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(
       builder.Configuration.GetConnectionString("BaseConnection")
       ));
 
-
 builder.Services.AddScoped<ICommandHandler<CreateOrderCommand, OrderDto>, CreateOrderCommandHandler>();
 builder.Services.AddScoped<IQueryHandler<GetOrderByIdQuery, OrderDto>, GetOrderByIdQueryHandler>();
+builder.Services.AddScoped<IQueryHandler<GetOrderBySummaryQuery, List<OrderSummaryDto>>, GetOrderBySummaryQueryHandler>();
 builder.Services.AddScoped<IValidator<CreateOrderCommand>, CreateOrderCommandValidator>();
 
 var app = builder.Build();
@@ -31,12 +31,10 @@ app.MapPost("/api/orders", async (ICommandHandler<CreateOrderCommand, OrderDto> 
         try
         {
             var created = await handler.HandleAsync(command);
-
             if (created == null)
                 return Results.BadRequest("Failed to create order");
 
             return Results.Created($"/api/orders/{created.iD}", created);
-
         }
         catch (ValidationException ex)
         {
@@ -51,6 +49,14 @@ app.MapGet("/api/orders/{id}", async (IQueryHandler<GetOrderByIdQuery, OrderDto>
         if (order == null)
             return Results.NotFound();
         return Results.Ok(order);
+    });
+
+app.MapGet("/api/orders", async (IQueryHandler<GetOrderBySummaryQuery, List<OrderSummaryDto>> handler) =>
+    {
+        var summary = await handler.HandleAsync(new GetOrderBySummaryQuery());
+        if (summary == null)
+            return Results.NotFound();
+        return Results.Ok(summary);
     });
 
 app.Run();
