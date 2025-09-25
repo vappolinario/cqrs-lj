@@ -20,17 +20,19 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapPost("/api/orders", async (AppDbContext context, Order order) =>
+app.MapPost("/api/orders", async (AppDbContext context, CreateOrderCommands command) =>
     {
-        await context.Orders.AddAsync(order);
-        await context.SaveChangesAsync();
+        var created = await CreateOrderCommandHandler.Handle(command, context);
 
-        return Results.Created($"/api/orders/{order.Id}", order);
+        if (created == null)
+            return Results.BadRequest("Failed to create order");
+
+        return Results.Created($"/api/orders/{created.Id}", created);
     });
 
 app.MapGet("/api/orders/{id}", async (AppDbContext context, int id) =>
     {
-        var order = await context.Orders.FirstOrDefaultAsync(o => o.Id == id);
+        var order = await GetOrderByIdQueryHandler.Handle(new GetOrderByIdQuery(id), context);
         if (order == null)
             return Results.NotFound();
         return Results.Ok(order);
