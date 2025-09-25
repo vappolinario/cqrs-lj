@@ -1,20 +1,34 @@
-public class CreateOrderCommandHandler
+public class CreateOrderCommandHandler : ICommandHandler<CreateOrderCommand, OrderDto>
 {
-  public static async Task<Order> Handle(CreateOrderCommands command, AppDbContext context)
-  {
-    var order = new Order
+    private readonly AppDbContext _context;
+
+
+    public CreateOrderCommandHandler(AppDbContext context)
     {
-      FirstName = command.FirstName,
-      LastName = command.LastName,
-      Status = command.Status,
-      CreatedAt = DateTime.Now,
-      TotalCost = command.TotalCost,
-    };
+        _context = context;
+    }
 
-    await context.Orders.AddAsync(order);
-    await context.SaveChangesAsync();
+    public async Task<OrderDto> HandleAsync(CreateOrderCommand command)
+    {
+        var order = new Order
+        {
+            FirstName = command.FirstName,
+            LastName = command.LastName,
+            Status = command.Status,
+            CreatedAt = DateTime.Now,
+            TotalCost = command.TotalCost,
+        };
 
-    return order;
-  }
+        await _context.Orders.AddAsync(order);
+        await _context.SaveChangesAsync();
 
+        return new OrderDto(
+           order.Id,
+           order.FirstName,
+           order.LastName,
+           order.Status,
+           order.CreatedAt,
+           order.TotalCost
+           );
+    }
 }

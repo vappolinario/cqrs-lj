@@ -1,1 +1,1 @@
-public record CreateOrderCommands(string FirstName, string LastName, string Status, Decimal TotalCost);
+public record CreateOrderCommand(string FirstName, string LastName, string Status, Decimal TotalCost);
