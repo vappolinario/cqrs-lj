@@ -1,21 +1,13 @@
 using FluentValidation;
+using Wolverine;
+using Wolverine.Attributes;
 
-public class CreateOrderCommandHandler : ICommandHandler<CreateOrderCommand, OrderDto>
+public class CreateOrderCommandHandler
 {
-    private readonly WriteDbContext _context;
-    private readonly IValidator<CreateOrderCommand> _validator;
-    private readonly IEventPublisher _eventPublisher;
-
-    public CreateOrderCommandHandler(WriteDbContext context, IValidator<CreateOrderCommand> validator, IEventPublisher eventPublisher)
+    [Transactional]
+    public static OrderCreatedEvent Handle(CreateOrderCommand command, WriteDbContext context, IValidator<CreateOrderCommand> validator, IMessageBus bus)
     {
-        _context = context;
-        _validator = validator;
-        _eventPublisher = eventPublisher;
-    }
-
-    public async Task<OrderDto> HandleAsync(CreateOrderCommand command)
-    {
-        var validationResult = await _validator.ValidateAsync(command);
+        var validationResult = validator.Validate(command);
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
@@ -28,8 +20,8 @@ public class CreateOrderCommandHandler : ICommandHandler<CreateOrderCommand, Ord
             TotalCost = command.TotalCost,
         };
 
-        await _context.Orders.AddAsync(order);
-        await _context.SaveChangesAsync();
+        context.Orders.Add(order);
+        context.SaveChanges();
 
         var orderCreatedEvent = new OrderCreatedEvent(
               order.Id,
@@ -38,15 +30,8 @@ public class CreateOrderCommandHandler : ICommandHandler<CreateOrderCommand, Ord
               order.TotalCost
             );
 
-        await _eventPublisher.PublishAsync(orderCreatedEvent);
+        bus.SendAsync(orderCreatedEvent);
 
-        return new OrderDto(
-           order.Id,
-           order.FirstName,
-           order.LastName,
-           order.Status,
-           order.CreatedAt,
-           order.TotalCost
-           );
+        return orderCreatedEvent;
     }
 }

@@ -1,14 +1,9 @@
+using Wolverine.Attributes;
 
-public class OrderCreatedProjectionHandler : IEventHandler<OrderCreatedEvent>
+public class OrderCreatedProjectionHandler
 {
-    private readonly ReadDbContext _context;
-
-    public OrderCreatedProjectionHandler(ReadDbContext context)
-    {
-        _context = context;
-    }
-
-    public async Task HandleAsync(OrderCreatedEvent evt)
+    [Transactional]
+    public static void Handle(OrderCreatedEvent evt, ReadDbContext context)
     {
         var order = new Order
         {
@@ -20,7 +15,9 @@ public class OrderCreatedProjectionHandler : IEventHandler<OrderCreatedEvent>
             TotalCost = evt.TotalCost
         };
 
-        await _context.Orders.AddAsync(order);
-        await _context.SaveChangesAsync();
+        context.Orders.Add(order);
+        context.SaveChanges();
+
+        Console.WriteLine($"Replicou {evt.OrderId}");
     }
 }

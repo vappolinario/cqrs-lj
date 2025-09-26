@@ -1,18 +1,11 @@
 
 using Microsoft.EntityFrameworkCore;
 
-public class GetOrderBySummaryQueryHandler : IQueryHandler<GetOrderBySummaryQuery, List<OrderSummaryDto>>
+public class GetOrderBySummaryQueryHandler
 {
-    private readonly ReadDbContext _context;
-
-    public GetOrderBySummaryQueryHandler(ReadDbContext context)
+    public static async Task<List<OrderSummaryDto>?> HandleAsync(GetOrderBySummaryQuery query, ReadDbContext context)
     {
-        _context = context;
-    }
-
-    public async Task<List<OrderSummaryDto>?> HandleAsync(GetOrderBySummaryQuery query)
-    {
-        return await _context.Orders.Select(o =>
+        return await context.Orders.Select(o =>
               new OrderSummaryDto(
                 o.Id,
                 o.FirstName + " " + o.LastName,

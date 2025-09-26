@@ -1,17 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 
-public class GetOrderByIdQueryHandler : IQueryHandler<GetOrderByIdQuery, OrderDto>
+public class GetOrderByIdQueryHandler
 {
-    private readonly ReadDbContext _context;
-
-    public GetOrderByIdQueryHandler(ReadDbContext context)
+    public static async Task<OrderDto?> HandleAsync(GetOrderByIdQuery query, ReadDbContext context)
     {
-        _context = context;
-    }
-
-    public async Task<OrderDto?> HandleAsync(GetOrderByIdQuery query)
-    {
-        var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == query.OrderId);
+        var order = await context.Orders.FirstOrDefaultAsync(o => o.Id == query.OrderId);
 
         if (order == null)
             return null;

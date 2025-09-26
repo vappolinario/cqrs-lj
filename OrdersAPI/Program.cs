@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Wolverine;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,21 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<WriteDbContext>(opt => opt.UseSqlite(
-      builder.Configuration.GetConnectionString("WriteDbConnection")
-      ));
+builder.Host.UseWolverine();
 
-builder.Services.AddDbContext<ReadDbContext>(opt => opt.UseSqlite(
-      builder.Configuration.GetConnectionString("ReadDbConnection")
-      ));
-
-builder.Services.AddScoped<ICommandHandler<CreateOrderCommand, OrderDto>, CreateOrderCommandHandler>();
-builder.Services.AddScoped<IQueryHandler<GetOrderByIdQuery, OrderDto>, GetOrderByIdQueryHandler>();
-builder.Services.AddScoped<IQueryHandler<GetOrderBySummaryQuery, List<OrderSummaryDto>>, GetOrderBySummaryQueryHandler>();
+builder.Services.AddDbContext<WriteDbContext>(opt => opt.UseSqlite(builder.Configuration.GetConnectionString("WriteDbConnection")));
+builder.Services.AddDbContext<ReadDbContext>(opt => opt.UseSqlite(builder.Configuration.GetConnectionString("ReadDbConnection")));
 builder.Services.AddScoped<IValidator<CreateOrderCommand>, CreateOrderCommandValidator>();
-builder.Services.AddSingleton<IEventPublisher, InProcessEventPublisher>();
-builder.Services.AddScoped<IEventHandler<OrderCreatedEvent>, OrderCreatedProjectionHandler>();
-builder.Services.AddScoped<IEventHandler<OrderCreatedEvent>, OrderCreatedConsoleHandler>();
 
 var app = builder.Build();
 
@@ -33,34 +24,31 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapPost("/api/orders", async (ICommandHandler<CreateOrderCommand, OrderDto> handler, CreateOrderCommand command) =>
+app.MapPost("/api/orders", async (CreateOrderCommand command, IMessageBus bus) =>
     {
         try
         {
-            var created = await handler.HandleAsync(command);
-            if (created == null)
-                return Results.BadRequest("Failed to create order");
-
-            return Results.Created($"/api/orders/{created.iD}", created);
+            var orderCreated = await bus.InvokeAsync<OrderCreatedEvent>(command);
+            return Results.Created($"/api/orders/{orderCreated.OrderId}", orderCreated);
         }
         catch (ValidationException ex)
         {
-            var erros = ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage });
-            return Results.BadRequest(erros);
+            var errors = ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage });
+            return Results.BadRequest(errors);
         }
     });
 
-app.MapGet("/api/orders/{id}", async (IQueryHandler<GetOrderByIdQuery, OrderDto> handler, int id) =>
+app.MapGet("/api/orders/{id}", async (int id, IMessageBus bus) =>
     {
-        var order = await handler.HandleAsync(new GetOrderByIdQuery(id));
+        var order = await bus.InvokeAsync<OrderDto>(new GetOrderByIdQuery(id));
         if (order == null)
             return Results.NotFound();
         return Results.Ok(order);
     });
 
-app.MapGet("/api/orders", async (IQueryHandler<GetOrderBySummaryQuery, List<OrderSummaryDto>> handler) =>
+app.MapGet("/api/orders", async (IMessageBus bus) =>
     {
-        var summary = await handler.HandleAsync(new GetOrderBySummaryQuery());
+        var summary = await bus.InvokeAsync<List<OrderSummaryDto>>(new GetOrderBySummaryQuery());
         if (summary == null)
             return Results.NotFound();
         return Results.Ok(summary);

@@ -1,5 +1,5 @@
 
-public class OrderCreatedConsoleHandler : IEventHandler<OrderCreatedEvent>
+public class OrderCreatedConsoleHandler
 {
     public Task HandleAsync(OrderCreatedEvent evt)
     {

@@ -1,7 +1,1 @@
-public record OrderCreatedEvent
-(
- int OrderId,
- string FirstName,
- string LastName,
- decimal TotalCost
-);
+public record OrderCreatedEvent(int OrderId, string FirstName, string LastName, decimal TotalCost);
