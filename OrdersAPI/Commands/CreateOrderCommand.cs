@@ -1,1 +1,3 @@
-public record CreateOrderCommand(string FirstName, string LastName, string Status, Decimal TotalCost);
+using MediatR;
+
+public record CreateOrderCommand(string FirstName, string LastName, string Status, Decimal TotalCost) : IRequest<OrderDto>;

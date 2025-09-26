@@ -1,1 +1,2 @@
-public record GetOrderBySummaryQuery();
+using MediatR;
+public record GetOrderBySummaryQuery() : IRequest<List<OrderSummaryDto>>;
