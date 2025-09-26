@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 public class GetOrderBySummaryQueryHandler : IQueryHandler<GetOrderBySummaryQuery, List<OrderSummaryDto>>
 {
-    private readonly AppDbContext _context;
+    private readonly ReadDbContext _context;
 
-    public GetOrderBySummaryQueryHandler(AppDbContext context)
+    public GetOrderBySummaryQueryHandler(ReadDbContext context)
     {
         _context = context;
     }

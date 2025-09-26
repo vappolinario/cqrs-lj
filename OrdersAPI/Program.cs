@@ -7,8 +7,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(
-      builder.Configuration.GetConnectionString("BaseConnection")
+builder.Services.AddDbContext<WriteDbContext>(opt => opt.UseSqlite(
+      builder.Configuration.GetConnectionString("WriteDbConnection")
+      ));
+
+builder.Services.AddDbContext<ReadDbContext>(opt => opt.UseSqlite(
+      builder.Configuration.GetConnectionString("ReadDbConnection")
       ));
 
 builder.Services.AddScoped<ICommandHandler<CreateOrderCommand, OrderDto>, CreateOrderCommandHandler>();

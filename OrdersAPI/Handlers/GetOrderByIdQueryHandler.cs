@@ -2,9 +2,9 @@ using Microsoft.EntityFrameworkCore;
 
 public class GetOrderByIdQueryHandler : IQueryHandler<GetOrderByIdQuery, OrderDto>
 {
-    private readonly AppDbContext _context;
+    private readonly ReadDbContext _context;
 
-    public GetOrderByIdQueryHandler(AppDbContext context)
+    public GetOrderByIdQueryHandler(ReadDbContext context)
     {
         _context = context;
     }
